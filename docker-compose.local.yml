@@ -1,0 +1,50 @@
+version: "3"
+
+# This docker file should only be used for a local development environment
+
+services:
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    container_name: web
+    command: sh -c "sh wait_for_db.sh &&
+      python manage.py migrate &&
+      python3 manage.py runserver 0.0.0.0:8010"
+
+    networks:
+      - shared-net
+    env_file:
+      - fartor.local.env
+    volumes:
+      - .:/code
+    ports:
+      - "8010:8010"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: "postgres:10-alpine"
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - shared-net
+    env_file:
+      - fartor.local.env
+
+  redis:
+    image: "redis:4.0-alpine"
+    restart: always
+    env_file:
+      - fartor.local.env
+    ports:
+      - "6379:6379"
+    networks:
+      - shared-net
+
+networks:
+  shared-net:
+    driver: bridge
